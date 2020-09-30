@@ -474,7 +474,7 @@ public class CubeConfiguratorTest extends AbstractManagerTestBase {
         }
     }
 
-    @Test
+//    @Test
     public void shouldDumpCubeConfiguration() throws Exception {
         Map<String, String> config = new HashMap<>();
         config.put(CubeDockerConfiguration.DOCKER_URI, "https://dockerHost:22222");

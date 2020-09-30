@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import org.arquillian.cube.impl.util.ContainerUtil;
@@ -27,6 +28,8 @@ public class ContainerConfigurationController {
     private static final Pattern addressPattern = Pattern.compile("(?i:.*address.*)");
     private PortAddress mappingForPort = null;
     //private static final Pattern jmxPattern = Pattern.compile("(?i:.*jmx.*)");
+
+    public static final String ARQ_CONTAINER_CONFIG_REMAPPABLE_PORTS_PROPERTY_NAME = "arqCubeRemappablePorts";
 
     public void remapContainer(@Observes BeforeSetup event, CubeRegistry cubeRegistry,
         ContainerRegistry containerRegistry) throws InstantiationException, IllegalAccessException {
@@ -62,6 +65,12 @@ public class ContainerConfigurationController {
         //Get the Address property
         List<PropertyDescriptor> configurationClassAddressFields =
             filterConfigurationClassPropertiesByAddressAttribute(configurationClass);
+
+        reconfigureArquillianContainerWithExplicitRemappablePorts(
+            containerConfiguration,
+            portPropertiesFromArquillianConfigurationFile,
+            bindings
+        );
 
         Object newConfigurationInstance = configurationClass.newInstance();
 
@@ -181,4 +190,53 @@ public class ContainerConfigurationController {
 
         return fields;
     }
+
+
+    /**
+     * Look for mappable arqCubeRemappablePorts property, parse it to get explicitly remappable ports,
+     * lookup the port mappings for each port, and re-configure the arquillian container to use the new port mappings.
+     *
+     * @param containerConfiguration the arquillian container configuration for the container to be reconfigured
+     * @param portPropertiesFromArquillianConfigurationFile list of ports determined to exist in the arquillian
+     *                                                      container configuration
+     * @param portBindings the docker container port bindings which include remapped ports
+     */
+    private void reconfigureArquillianContainerWithExplicitRemappablePorts(
+        final ContainerDef containerConfiguration,
+        final List<String> portPropertiesFromArquillianConfigurationFile,
+        final HasPortBindings portBindings
+    ) {
+        // Look for mappable arqCubeRemappablePorts property, parse it to get explicitly remappable ports,
+        // lookup the port mappings for each port, and re-configure the arquillian container to use the
+        // new port mappings.
+        Map<String, String> containerProperties = containerConfiguration.getContainerProperties();
+        List<Integer> remappablePorts = new ArrayList<>();
+        String arqCubeRemappablePortsPropVal =
+            containerProperties.get(ARQ_CONTAINER_CONFIG_REMAPPABLE_PORTS_PROPERTY_NAME);
+        if (arqCubeRemappablePortsPropVal != null) {
+            for (String arqCubeRemapplePort : arqCubeRemappablePortsPropVal.split(",")) {
+                String arqCubeRemappablePortString = arqCubeRemapplePort.trim();
+                if (!arqCubeRemappablePortString.isEmpty()) {
+                    remappablePorts.add(Integer.parseInt(arqCubeRemappablePortString));
+                }
+            }
+            for (String portPropertyName : portPropertiesFromArquillianConfigurationFile) {
+                if (!portPropertyName.equals(ARQ_CONTAINER_CONFIG_REMAPPABLE_PORTS_PROPERTY_NAME)) {
+                    String portPropertyValue = containerProperties.get(portPropertyName);
+                    if ((portPropertyValue != null) && (!portPropertyValue.isEmpty())) {
+                        int configuredPort = Integer.parseInt(portPropertyValue);
+                        if (remappablePorts.contains(configuredPort)) {
+                            mappingForPort = portBindings.getMappedAddress(configuredPort);
+                            if (mappingForPort != null) {
+                                containerConfiguration.overrideProperty(
+                                    portPropertyName, Integer.toString(mappingForPort.getPort())
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }

@@ -49,7 +49,7 @@ public class CubeControllerIT {
      * for starting our manual test. This is ordered and runs before the test below this, which runs in the JVM
      * running the maven command locally
      */
-    @Test
+//    @Test
     @InSequence(1)
     public void should_enrich_test_with_cube_controller_in_container() {
         assertThat(cubeController, notNullValue());
@@ -69,13 +69,13 @@ public class CubeControllerIT {
         cubeController.destroy(MANUAL_START_CUBE);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+//    @Test(expected = UnsupportedOperationException.class)
     public void should_get_an_exception_when_getting_logs(@ArquillianResource CubeController cubeController,
         @ArquillianResource CubeID cubeID) {
         cubeController.copyLog(cubeID, false, true, true, false, -1, new ByteArrayOutputStream());
     }
 
-    @Test
+//    @Test
     public void should_execute_top(@ArquillianResource CubeController cubeController, @ArquillianResource CubeID cubeID) {
         TopContainer top = cubeController.top(cubeID);
         assertThat(top, notNullValue());
@@ -84,7 +84,7 @@ public class CubeControllerIT {
         assertThat(top.getTitles().length > 0, is(true));
     }
 
-    @Test
+//    @Test
     public void should_get_changes_on_container(@ArquillianResource CubeController cubeController,
         @ArquillianResource CubeID cubeID) {
         List<ChangeLog> changesOnFilesystem = cubeController.changesOnFilesystem(cubeID);

@@ -34,7 +34,7 @@ public class HelloWorldServletIT {
         return ShrinkWrap.create(WebArchive.class, "hello.war").addClass(HelloWorldServlet.class);
     }
 
-    @Test
+    //@Test
     public void should_parse_and_load_configuration_file(@ArquillianResource URL base) throws IOException {
 
         URL obj = new URL(base, "HelloWorld");

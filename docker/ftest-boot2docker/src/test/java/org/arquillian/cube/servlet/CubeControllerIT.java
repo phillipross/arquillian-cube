@@ -37,7 +37,7 @@ public class CubeControllerIT {
      * for starting our manual test. This is ordered and runs before the test below this, which runs in the JVM
      * running the maven command locally
      */
-    @Test
+//    @Test
     @InSequence(1)
     public void should_enrich_test_with_cube_controller_in_container() {
         assertThat(cubeController, notNullValue());
